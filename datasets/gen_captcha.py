@@ -9,6 +9,8 @@ from captcha.image import ImageCaptcha
 
 import itertools
 
+import imageGenetor
+
 FLAGS = None
 META_FILENAME = 'meta.json'
 
@@ -21,6 +23,9 @@ def get_choices():
         ]
     return tuple([i for is_selected, subset in choices for i in subset if is_selected])
 
+def get_choices_chinese():
+    return tuple(['的', '我', '了', '不', '他', '在', '是', '有', '人', '来'])
+
 
 def _gen_captcha(img_dir, num_per_image, n, width, height, choices):
     if os.path.exists(img_dir):
@@ -28,14 +33,12 @@ def _gen_captcha(img_dir, num_per_image, n, width, height, choices):
     if not os.path.exists(img_dir):
         os.makedirs(img_dir)
 
-    image = ImageCaptcha(width=width, height=height)
-
     print('generating %s epoches of captchas in %s' % (n, img_dir))
     for _ in range(n):
         for i in itertools.permutations(choices, num_per_image):
             captcha = ''.join(i)
             fn = os.path.join(img_dir, '%s_%s.png' % (captcha, uuid.uuid4()))
-            image.write(captcha, fn)
+            imageGenetor.generateImage(captcha, width, height, fn)
 
 
 def build_file_path(x):
@@ -47,10 +50,13 @@ def gen_dataset():
     num_per_image = FLAGS.npi
     test_ratio = FLAGS.t
 
-    choices = get_choices()
+    choices = get_choices_chinese()
 
     width = 40 + 20 * num_per_image
     height = 100
+
+    # width = 16 * num_per_image
+    # height = 35
 
     # meta info
     meta = {
