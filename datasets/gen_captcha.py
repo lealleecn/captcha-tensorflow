@@ -52,11 +52,12 @@ def gen_dataset():
 
     choices = get_choices_chinese()
 
-    width = 40 + 20 * num_per_image
-    height = 100
+    # width = 40 + 20 * num_per_image
+    # height = 100
 
-    # width = 16 * num_per_image
-    # height = 35
+    # width 和 height必须是偶数
+    width = 16 * num_per_image
+    height = 36
 
     # meta info
     meta = {
