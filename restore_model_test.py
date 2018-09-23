@@ -6,7 +6,7 @@ import tensorflow as tf
 
 import datasets.base as input_data
 
-MAX_STEPS = 10000
+MAX_STEPS = 500
 BATCH_SIZE = 50
 NEXT_BATCH_SIZE = 200
 
@@ -15,7 +15,6 @@ LOG_DIR = 'log/cnn1-run-%s' % datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
 FLAGS = None
 
 saveModelPath = 'saved_model/easy-model.ckpt'
-
 
 def variable_summaries(var):
     """Attach a lot of summaries to a Tensor (for TensorBoard visualization)."""
@@ -51,9 +50,11 @@ def max_pool_2x2(x):
 
 def main(_):
     # load data
-    meta, train_data, test_data = input_data.load_data(FLAGS.data_dir, flatten=False)
+    meta, train_data, test_data = input_data.load_data(
+        FLAGS.data_dir, flatten=False)
     print('data loaded')
-    print('train images: %s. test images: %s' % (train_data.images.shape[0], test_data.images.shape[0]))
+    print('train images: %s. test images: %s' %
+          (train_data.images.shape[0], test_data.images.shape[0]))
 
     LABEL_SIZE = meta['label_size']
     IMAGE_HEIGHT = meta['height']
@@ -127,42 +128,35 @@ def main(_):
 
     with tf.Session() as sess:
 
-        merged = tf.summary.merge_all()
-        train_writer = tf.summary.FileWriter(LOG_DIR + '/train', sess.graph)
-        test_writer = tf.summary.FileWriter(LOG_DIR + '/test', sess.graph)
-
         saver = tf.train.Saver()
+
+        merged = tf.summary.merge_all()
 
         tf.global_variables_initializer().run()
 
+        saver.restore(sess, saveModelPath)
+
         # Train
         for i in range(MAX_STEPS):
-            batch_xs, batch_ys = train_data.next_batch(BATCH_SIZE)
-
-            step_summary, _ = sess.run([merged, train_step], feed_dict={x: batch_xs, y_: batch_ys, keep_prob: 1.0})
-            train_writer.add_summary(step_summary, i)
 
             if i % 100 == 0:
-                # Test trained model
-                valid_summary, train_accuracy = sess.run([merged, accuracy], feed_dict={x: batch_xs, y_: batch_ys, keep_prob: 1.0})
-                train_writer.add_summary(valid_summary, i)
 
                 # final check after looping
                 test_x, test_y = test_data.next_batch(NEXT_BATCH_SIZE)
-                test_summary, test_accuracy = sess.run([merged, accuracy], feed_dict={x: test_x, y_: test_y, keep_prob: 1.0})
-                test_writer.add_summary(test_summary, i)
+                _test_summary, test_accuracy = sess.run([merged, accuracy], feed_dict={
+                                                       x: test_x, y_: test_y, keep_prob: 1.0})
 
-                print('step %s, training accuracy = %.2f%%, testing accuracy = %.2f%%' % (i, train_accuracy * 100, test_accuracy * 100))
+                print('step %s, testing accuracy = %.2f%%' % (
+                    i,  test_accuracy * 100))
 
-        train_writer.close()
-        test_writer.close()
 
         # final check after looping
         test_x, test_y = test_data.next_batch(NEXT_BATCH_SIZE)
-        test_accuracy = accuracy.eval(feed_dict={x: test_x, y_: test_y, keep_prob: 1.0})
+        test_accuracy = accuracy.eval(
+            feed_dict={x: test_x, y_: test_y, keep_prob: 1.0})
         print('testing accuracy = %.2f%%' % (test_accuracy * 100, ))
 
-        saver.save(sess, saveModelPath)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
